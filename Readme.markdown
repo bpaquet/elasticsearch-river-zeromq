@@ -1,9 +1,14 @@
 ZeroMQ Logstash River Plugin for ElasticSearch
 ==================================
 
-This plugin allows fast indexing from logstash or [node-logstash](https://github.com/bpaquet/node-logstash), using the ZeroMQ transport instead of HTTP.
+This plugin allows fast indexing from logstash or [node-logstash](https://github.com/bpaquet/node-logstash), using the ZeroMQ transport.
 
 Currently, this plugin use [JeroMQ](https://github.com/zeromq/jeromq), a pure Java ZeroMQ implementation.
+
+Without this plugin:
+
+* Logstash create an ElasticSearch node and join the cluster. Startup is very slow, and can consume lot of memory.
+* Node-logstash use standard HTTP ElasticSearch protocol.
 
 Installation
 ---
