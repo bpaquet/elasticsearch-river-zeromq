@@ -1,7 +1,7 @@
 ZeroMQ Logstash River Plugin for ElasticSearch
 ==================================
 
-This plugin allow fast indexing from logstash or node-logstash, using the ZeroMQ plugin instead of HTTP connector.
+This plugin allows fast indexing from logstash or [node-logstash](https://github.com/bpaquet/node-logstash), using the ZeroMQ transport instead of HTTP.
 
 Currently, this plugin use [JeroMQ](https://github.com/zeromq/jeromq), a pure Java ZeroMQ implementation.
 
