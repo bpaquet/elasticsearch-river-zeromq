@@ -15,6 +15,10 @@ Without this plugin:
 Installation
 ---
 
+```sh
+bin/plugin -install bpaquet/elasticsearch-river-zeromq/0.0.1 --url https://github.com/bpaquet/elasticsearch-river-zeromq/releases/download/v0.0.1/elasticsearch-river-zeromq-0.0.1.zip
+```
+
 How to use it
 ---
 
