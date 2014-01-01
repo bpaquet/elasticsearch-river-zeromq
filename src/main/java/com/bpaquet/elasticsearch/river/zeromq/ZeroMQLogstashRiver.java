@@ -38,6 +38,7 @@ import org.elasticsearch.script.ScriptService;
 
 import zmq.Ctx;
 import zmq.Msg;
+import zmq.PollItem;
 import zmq.SocketBase;
 import zmq.ZMQ;
 
@@ -55,10 +56,8 @@ public class ZeroMQLogstashRiver extends AbstractRiverComponent implements River
 	private String dataType = "logs";
 
     private volatile Thread thread;
-
-	private Ctx zmq_ctx;
-
-	private SocketBase zmq_socket;
+    
+    private volatile boolean loop;
 	
 	@SuppressWarnings("unchecked")
 	@Inject
@@ -81,74 +80,89 @@ public class ZeroMQLogstashRiver extends AbstractRiverComponent implements River
 	public void start() {
 	    logger.info("Starting ZeroMQ Logstash River [{}]", address);
 
-	    thread = EsExecutors.daemonThreadFactory(settings.globalSettings(), "zeromq-logstash").newThread(new Consumer());
+	    loop = true;
+	    thread = EsExecutors.daemonThreadFactory(settings.globalSettings(), "zeromq-logstash").newThread(new ConsumerJeromq());
 	    thread.start();
 	}
 
     @Override
     public void close() {
-    	if (thread.isAlive()) {
-    		logger.info("Closing ZeroMQ Logstash River [{}]", address);
-    		thread.interrupt();
-    	}
+    	logger.info("Closing ZeroMQ Logstash River [{}]", address);
+    	loop = false;
+    	try {
+			thread.join();
+			logger.info("ZeroMQ Logstash River [{}] closed", address);
+	    } catch (InterruptedException e) {
+			logger.error("Interrupted while waiting end of ZeroMQ loop {}", e);
+		}
     }
     
-    private void createSocket() {
-    	zmq_ctx = ZMQ.zmq_init(1);
-        zmq_socket = ZMQ.zmq_socket(zmq_ctx, ZMQ.ZMQ_PULL);
-        boolean ok = ZMQ.zmq_bind(zmq_socket, address);
-        if (ok) {
-        	logger.info("ZeroMQ socket closed to {}", address);
-        }
-        else {
-        	logger.warn("Unable to bind socket to {}", address);
-        	closeSocket();
-        }
-    }
-    
-    private void closeSocket() {
-    	if (zmq_socket != null) {
-    		ZMQ.zmq_close(zmq_socket);
-        	logger.info("ZeroMQ socket closed");
-        	zmq_socket = null;
-    	}
-    	if (zmq_ctx != null) {
-    		ZMQ.zmq_term(zmq_ctx);
-    		zmq_ctx = null;
-    	}
-    }
-    
-    private String computeIndex() {
+    public static String computeIndex() {
     	return "logstash-" + dateFormat.format(new Date());
     }
     
-    private class Consumer implements Runnable {
+    private class ConsumerJeromq implements Runnable {
+    	
+    	private Ctx zmq_ctx;
 
+    	private SocketBase zmq_socket;
+
+        private void createSocket() {
+        	zmq_ctx = ZMQ.zmq_init(1);
+            zmq_socket = ZMQ.zmq_socket(zmq_ctx, ZMQ.ZMQ_PULL);
+            boolean ok = ZMQ.zmq_bind(zmq_socket, address);
+            if (ok) {
+            	logger.info("ZeroMQ socket bound to {}", address);
+            }
+            else {
+            	logger.warn("Unable to bind socket to {}", address);
+            	closeSocket();
+            }
+        }
+        
+        private void closeSocket() {
+        	if (zmq_socket != null) {
+            	ZMQ.zmq_close(zmq_socket);
+            	logger.info("ZeroMQ socket closed");
+            	zmq_socket = null;
+        	}
+        	if (zmq_ctx != null) {
+        		ZMQ.zmq_term(zmq_ctx);
+        		logger.info("ZeroMQ context terminated");
+        		zmq_ctx = null;
+        	}
+        }
+        
+        
         @Override
         public void run() {
-        	createSocket();
-        	if (zmq_socket != null) {
-        		logger.info("Starting ZeroMQ Logstash loop");
-        		while (true) {
-            		Msg msg = ZMQ.zmq_recv(zmq_socket, 0);
-            		IndexRequestBuilder req = client.prepareIndex();
-            		req.setSource(msg.data());
-            		req.setIndex(computeIndex());
-            		req.setType(dataType);
-            		req.execute(new ActionListener<IndexResponse>() {
-						
-						@Override
-						public void onResponse(IndexResponse arg0) {
-						}
-						
-						@Override
-						public void onFailure(Throwable arg0) {
-							logger.warn("Unable to index data {}", arg0);
-						}
-					});
-            		msg.close();
+    		createSocket();
+    		if (zmq_socket != null) {
+    			PollItem[] poll = new PollItem[]{new PollItem(zmq_socket, ZMQ.ZMQ_POLLIN)};
+    			logger.info("Starting ZeroMQ Logstash loop");
+        		while (loop) {
+        			if (ZMQ.zmq_poll(poll, 500) > 0) {
+	        			Msg msg = ZMQ.zmq_recv(zmq_socket, 0);
+	        			IndexRequestBuilder req = client.prepareIndex();
+	            		req.setSource(msg.data());
+	            		req.setIndex(computeIndex());
+	            		req.setType(dataType);
+	            		req.execute(new ActionListener<IndexResponse>() {
+							
+							@Override
+							public void onResponse(IndexResponse arg0) {
+							}
+							
+							@Override
+							public void onFailure(Throwable arg0) {
+								logger.error("Unable to index data {}", arg0);
+							}
+						});
+        			}
             	}
-    		}
+            	closeSocket();
+        		logger.info("End of ZeroMQ Logstash loop");
+        	}
         }
     }
 
