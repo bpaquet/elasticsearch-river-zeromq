@@ -16,7 +16,7 @@ Installation
 ---
 
 ```sh
-bin/plugin -install bpaquet/elasticsearch-river-zeromq/0.0.1 --url https://github.com/bpaquet/elasticsearch-river-zeromq/releases/download/v0.0.1/elasticsearch-river-zeromq-0.0.1.zip
+bin/plugin -install bpaquet/elasticsearch-river-zeromq/0.0.2 --url https://github.com/bpaquet/elasticsearch-river-zeromq/releases/download/v0.0.2/elasticsearch-river-zeromq-0.0.2.zip
 ```
 
 How to use it
@@ -61,6 +61,6 @@ Use JZMQ
 
 * Install the plugin
 * Go into plugin directory : ``plugins/river-zeromq``
-* Remove the jeromq jar
-* Copy the zmq.jar or symlink it (standard installation path is ``/usr/share/java/zmq.jar``)
+* Remove jeromq and jzmq jars
+* Copy the zmq.jar (standard installation path is ``/usr/share/java/zmq.jar``)
 * Set ``java.library.path`` while starting ElasticSearch : ``JAVA_OPTS="-Djava.library.path=/lib" bin/elasticsearch -f``
