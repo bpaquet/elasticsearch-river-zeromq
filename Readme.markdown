@@ -1,6 +1,8 @@
 ZeroMQ Logstash River Plugin for ElasticSearch
 ==================================
 
+[![Build Status](https://travis-ci.org/bpaquet/elasticsearch-river-zeromq.png)](https://travis-ci.org/bpaquet/elasticsearch-river-zeromq)
+
 This plugin allows fast indexing from logstash or [node-logstash](https://github.com/bpaquet/node-logstash), using the ZeroMQ transport.
 
 Currently, this plugin use [JeroMQ](https://github.com/zeromq/jeromq), a pure Java ZeroMQ implementation.
