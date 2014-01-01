@@ -35,6 +35,9 @@ import org.elasticsearch.river.River;
 import org.elasticsearch.river.RiverName;
 import org.elasticsearch.river.RiverSettings;
 import org.elasticsearch.script.ScriptService;
+import org.zeromq.ZContext;
+import org.zeromq.ZMQ.Socket;
+import org.zeromq.ZMQException;
 
 import zmq.Ctx;
 import zmq.Msg;
@@ -81,7 +84,16 @@ public class ZeroMQLogstashRiver extends AbstractRiverComponent implements River
 	    logger.info("Starting ZeroMQ Logstash River [{}]", address);
 
 	    loop = true;
-	    thread = EsExecutors.daemonThreadFactory(settings.globalSettings(), "zeromq-logstash").newThread(new ConsumerJeromq());
+	    Runnable consumer;
+	    try {
+	    	Class.forName("zmq.ZMQ");
+	    	consumer = new ConsumerJeromq();
+	    	logger.info("Using ZeroMQ driver JeroMQ {}.{}", ZMQ.ZMQ_VERSION_MAJOR, ZMQ.ZMQ_VERSION_MINOR);
+	    } catch( ClassNotFoundException e ) {
+	    	logger.info("Using ZeroMQ driver JZMQ {}.{}", org.zeromq.ZMQ.getMajorVersion(), org.zeromq.ZMQ.getMinorVersion());
+	    	consumer = new ConsumerJZmq();
+	    }
+	    thread = EsExecutors.daemonThreadFactory(settings.globalSettings(), "zeromq-logstash").newThread(consumer);
 	    thread.start();
 	}
 
@@ -101,6 +113,71 @@ public class ZeroMQLogstashRiver extends AbstractRiverComponent implements River
     	return "logstash-" + dateFormat.format(new Date());
     }
     
+    private class ConsumerJZmq implements Runnable {
+    	
+    	private ZContext zmq_ctx;
+
+    	private Socket zmq_socket;
+
+        private void createSocket() {
+        	zmq_ctx = new ZContext();
+            zmq_socket = zmq_ctx.createSocket(org.zeromq.ZMQ.PULL);
+            try {
+            	zmq_socket.bind(address);
+            	logger.info("ZeroMQ socket bound to {}", address);
+            }
+            catch(ZMQException e) {
+            	logger.warn("Unable to bind socket to {}: {}", address, e);
+            	closeSocket();
+            }
+        }
+        
+        private void closeSocket() {
+        	if (zmq_socket != null) {
+            	zmq_ctx.destroySocket(zmq_socket);
+            	logger.info("ZeroMQ socket closed");
+            	zmq_socket = null;
+        	}
+        	if (zmq_ctx != null) {
+        		zmq_ctx.close();
+        		logger.info("ZeroMQ context destroyed");
+        		zmq_ctx = null;
+        	}
+        }
+        
+        
+        @Override
+        public void run() {
+    		createSocket();
+    		if (zmq_socket != null) {
+    			org.zeromq.ZMQ.PollItem[] poll = new org.zeromq.ZMQ.PollItem[]{new org.zeromq.ZMQ.PollItem(zmq_socket, org.zeromq.ZMQ.Poller.POLLIN)};
+    			logger.info("Starting ZeroMQ Logstash loop");
+        		while (loop) {
+        			if (org.zeromq.ZMQ.poll(poll, 500) > 0) {
+	        			byte [] data = zmq_socket.recv(0);
+	        			IndexRequestBuilder req = client.prepareIndex();
+	            		req.setSource(data);
+	            		req.setIndex(computeIndex());
+	            		req.setType(dataType);
+	            		req.execute(new ActionListener<IndexResponse>() {
+							
+							@Override
+							public void onResponse(IndexResponse arg0) {
+							}
+							
+							@Override
+							public void onFailure(Throwable arg0) {
+								logger.error("Unable to index data {}", arg0);
+							}
+						});
+        			}
+            	}
+            	closeSocket();
+        		logger.info("End of ZeroMQ Logstash loop");
+        	}
+        }
+    }
+
     private class ConsumerJeromq implements Runnable {
     	
     	private Ctx zmq_ctx;

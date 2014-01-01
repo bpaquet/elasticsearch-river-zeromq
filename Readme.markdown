@@ -5,7 +5,7 @@ ZeroMQ Logstash River Plugin for ElasticSearch
 
 This plugin allows fast indexing from logstash or [node-logstash](https://github.com/bpaquet/node-logstash), using the ZeroMQ transport.
 
-Currently, this plugin use [JeroMQ](https://github.com/zeromq/jeromq), a pure Java ZeroMQ implementation.
+This plugin use by default [JeroMQ](https://github.com/zeromq/jeromq), a pure Java ZeroMQ implementation. See below to use [JZmq](https://github.com/zeromq/jzmq).
 
 Without this plugin:
 
@@ -55,3 +55,12 @@ output://zeromq://tcp://127.0.0.1:5556
 ```
 
 That's all !
+
+Use JZMQ
+---
+
+* Install the plugin
+* Go into plugin directory : ``plugins/river-zeromq``
+* Remove the jeromq jar
+* Copy the zmq.jar or symlink it (standard installation path is ``/usr/share/java/zmq.jar``)
+* Set ``java.library.path`` while starting ElasticSearch : ``JAVA_OPTS="-Djava.library.path=/lib" bin/elasticsearch -f``
