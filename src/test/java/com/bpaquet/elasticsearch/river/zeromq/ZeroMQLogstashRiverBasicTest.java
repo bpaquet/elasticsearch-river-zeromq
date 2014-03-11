@@ -40,7 +40,7 @@ public class ZeroMQLogstashRiverBasicTest extends ZeroMQLogstashRiverRunnerTest 
 		Msg m = new Msg(line.string());
 		ZMQ.zmq_send(socket, m, 0);
 		// wait for message processing
-        Thread.sleep(500);
+        Thread.sleep(1000);
         // Force index refresh to avoid long wait
         node.client().admin().indices().prepareRefresh(INDEX).execute().actionGet();
         

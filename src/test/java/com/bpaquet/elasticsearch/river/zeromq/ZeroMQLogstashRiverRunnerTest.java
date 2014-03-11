@@ -17,7 +17,7 @@ import zmq.ZMQ;
 
 public abstract class ZeroMQLogstashRiverRunnerTest {
 
-	protected static final String INDEX = ZeroMQLogstashRiver.computeIndex();
+	protected static final String INDEX = ZeroMQLogstashRiver.computeIndex("logstash");
 
 	protected Node node;
 	
@@ -36,6 +36,7 @@ public abstract class ZeroMQLogstashRiverRunnerTest {
 				.build();
 		node = NodeBuilder.nodeBuilder().local(true).settings(settings).node();
 		
+		System.out.println(INDEX);
 		try {
             node.client().admin().indices().prepareDelete(INDEX).execute().actionGet();
         } catch (IndexMissingException e) {

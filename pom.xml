@@ -20,7 +20,7 @@
     </parent>
 
     <properties>
-        <elasticsearch.version>0.90.2</elasticsearch.version>
+        <elasticsearch.version>1.0.0</elasticsearch.version>
         <jeromq.version>0.3.2</jeromq.version>
         <jzmq.version>3.0.1</jzmq.version>
     </properties>

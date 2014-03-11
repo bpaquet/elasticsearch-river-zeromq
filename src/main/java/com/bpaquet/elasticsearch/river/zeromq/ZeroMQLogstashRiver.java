@@ -58,6 +58,8 @@ public class ZeroMQLogstashRiver extends AbstractRiverComponent implements River
 	
 	private String dataType = "logs";
 
+    private String prefix = "logstash";
+
     private volatile Thread thread;
     
     private volatile boolean loop;
@@ -76,12 +78,15 @@ public class ZeroMQLogstashRiver extends AbstractRiverComponent implements River
             if (zeroMQSettings.containsKey("dataType")) {
             	dataType = (String) zeroMQSettings.get("dataType");
             }
+            if (zeroMQSettings.containsKey("prefix")) {
+                prefix = (String) zeroMQSettings.get("prefix");
+            }
         }
    }
  
 	@Override
 	public void start() {
-	    logger.info("Starting ZeroMQ Logstash River [{}]", address);
+	    logger.info("Starting ZeroMQ Logstash River [{}] using index prefix {}", address, prefix);
 
 	    loop = true;
 	    Runnable consumer;
@@ -109,8 +114,8 @@ public class ZeroMQLogstashRiver extends AbstractRiverComponent implements River
 		}
     }
     
-    public static String computeIndex() {
-    	return "logstash-" + dateFormat.format(new Date());
+    public static String computeIndex(String prefix) {
+    	return prefix + "-" + dateFormat.format(new Date());
     }
     
     private class ConsumerJZmq implements Runnable {
@@ -156,8 +161,9 @@ public class ZeroMQLogstashRiver extends AbstractRiverComponent implements River
         			if (org.zeromq.ZMQ.poll(poll, 500) > 0) {
 	        			byte [] data = zmq_socket.recv(0);
 	        			IndexRequestBuilder req = client.prepareIndex();
-	            		req.setSource(data);
-	            		req.setIndex(computeIndex());
+                        String index = computeIndex(prefix);
+                        req.setSource(data);
+	            		req.setIndex(index);
 	            		req.setType(dataType);
 	            		req.execute(new ActionListener<IndexResponse>() {
 							
@@ -221,8 +227,9 @@ public class ZeroMQLogstashRiver extends AbstractRiverComponent implements River
         			if (ZMQ.zmq_poll(poll, 500) > 0) {
 	        			Msg msg = ZMQ.zmq_recv(zmq_socket, 0);
 	        			IndexRequestBuilder req = client.prepareIndex();
-	            		req.setSource(msg.data());
-	            		req.setIndex(computeIndex());
+	            		String index = computeIndex(prefix);
+                        req.setSource(msg.data());
+	            		req.setIndex(index);
 	            		req.setType(dataType);
 	            		req.execute(new ActionListener<IndexResponse>() {
 							
