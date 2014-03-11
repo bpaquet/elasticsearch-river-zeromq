@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.bpaquet</groupId>
     <artifactId>elasticsearch-river-zeromq</artifactId>
-    <version>0.0.3-SNAPSHOT</version>
+    <version>0.0.3</version>
     <packaging>jar</packaging>
     <description>ZeroMQ Logstash River for ElasticSearch</description>
     <scm>
