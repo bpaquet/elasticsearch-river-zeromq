@@ -22,7 +22,7 @@
 
   <properties>
     <elasticsearch.version>1.2.1</elasticsearch.version>
-    <jeromq.version>0.3.2</jeromq.version>
+    <jeromq.version>0.3.4</jeromq.version>
     <jzmq.version>3.0.1</jzmq.version>
   </properties>
 

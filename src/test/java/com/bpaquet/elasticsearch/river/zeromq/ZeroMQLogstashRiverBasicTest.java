@@ -37,7 +37,7 @@ public class ZeroMQLogstashRiverBasicTest extends ZeroMQLogstashRiverRunnerTest 
 				.field("message", "toto")
 				.field("source", "stdin")
 				.endObject();
-		Msg m = new Msg(line.string());
+		Msg m = new Msg(line.string().getBytes());
 		ZMQ.zmq_send(socket, m, 0);
 		// wait for message processing
         Thread.sleep(1000);
