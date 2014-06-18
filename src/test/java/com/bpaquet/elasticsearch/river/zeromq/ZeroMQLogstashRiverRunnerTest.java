@@ -17,50 +17,50 @@ import zmq.ZMQ;
 
 public abstract class ZeroMQLogstashRiverRunnerTest {
 
-	protected static final String INDEX = ZeroMQLogstashRiver.computeIndex("logstash");
+  protected static final String INDEX = ZeroMQLogstashRiver.computeIndex("logstash");
 
-	protected Node node;
-	
-	protected Ctx ctx;
-	
-	protected SocketBase socket;
+  protected Node node;
 
-	protected abstract XContentBuilder river() throws IOException;
-	
-	@Before
-	public void setup() throws Exception {
-		Settings settings = ImmutableSettings.settingsBuilder()
-				.put("gateway.type", "none")
-				.put("index.number_of_shards", 1)
-				.put("index.number_of_replicas", 0)
-				.build();
-		node = NodeBuilder.nodeBuilder().local(true).settings(settings).node();
-		
-		System.out.println(INDEX);
-		try {
-            node.client().admin().indices().prepareDelete(INDEX).execute().actionGet();
-        } catch (IndexMissingException e) {
-        }
-        
-		node.client().prepareIndex("_river", "my_river", "_meta").setSource(river()).execute().actionGet();
+  protected Ctx ctx;
 
-        // wait for river start
-        Thread.sleep(200);
-	}
+  protected SocketBase socket;
 
-	@After
-	public void tearDown() {
-		if (socket != null) {
-			ZMQ.zmq_close(socket);
-			socket = null;
-		}
-		if (ctx != null) {
-			ZMQ.zmq_term(ctx);
-			ctx = null;
-		}
-		if (node != null) {
-			node.close();
-		}
-		node = null;
-	}
+  protected abstract XContentBuilder river() throws IOException;
+
+  @Before
+  public void setup() throws Exception {
+    Settings settings = ImmutableSettings.settingsBuilder()
+        .put("gateway.type", "none")
+        .put("index.number_of_shards", 1)
+        .put("index.number_of_replicas", 0)
+        .build();
+    node = NodeBuilder.nodeBuilder().local(true).settings(settings).node();
+
+    System.out.println(INDEX);
+    try {
+      node.client().admin().indices().prepareDelete(INDEX).execute().actionGet();
+    } catch (IndexMissingException e) {
+    }
+
+    node.client().prepareIndex("_river", "my_river", "_meta").setSource(river()).execute().actionGet();
+
+    // wait for river start
+    Thread.sleep(200);
+  }
+
+  @After
+  public void tearDown() {
+    if (socket != null) {
+      ZMQ.zmq_close(socket);
+      socket = null;
+    }
+    if (ctx != null) {
+      ZMQ.zmq_term(ctx);
+      ctx = null;
+    }
+    if (node != null) {
+      node.close();
+    }
+    node = null;
+  }
 }

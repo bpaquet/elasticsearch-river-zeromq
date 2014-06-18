@@ -25,26 +25,24 @@ import org.elasticsearch.river.RiversModule;
 
 import com.bpaquet.elasticsearch.river.zeromq.ZeroMQLogstashRiverModule;
 
-/**
- *
- */
 public class ZeroMQLogstashRiverPlugin extends AbstractPlugin {
 
-    @Inject
-    public ZeroMQLogstashRiverPlugin() {
-    }
+  @Inject
+  public ZeroMQLogstashRiverPlugin() {
+  }
 
-    @Override
-    public String name() {
-        return "river-zeromq-logstash";
-    }
+  @Override
+  public String name() {
+    return "river-zeromq-logstash";
+  }
 
-    @Override
-    public String description() {
-        return "River ZeroMQ Logstash Plugin";
-    }
+  @Override
+  public String description() {
+    return "River ZeroMQ Logstash Plugin";
+  }
 
-    public void onModule(RiversModule module) {
-        module.registerRiver("zeromq-logstash", ZeroMQLogstashRiverModule.class);
-    }
+
+  public void onModule(RiversModule module) {
+    module.registerRiver("zeromq-logstash", ZeroMQLogstashRiverModule.class);
+  }
 }
