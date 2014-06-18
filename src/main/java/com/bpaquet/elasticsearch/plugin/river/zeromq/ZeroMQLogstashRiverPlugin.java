@@ -41,7 +41,6 @@ public class ZeroMQLogstashRiverPlugin extends AbstractPlugin {
     return "River ZeroMQ Logstash Plugin";
   }
 
-
   public void onModule(RiversModule module) {
     module.registerRiver("zeromq-logstash", ZeroMQLogstashRiverModule.class);
   }

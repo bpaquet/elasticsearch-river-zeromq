@@ -45,11 +45,9 @@ import zmq.PollItem;
 import zmq.SocketBase;
 import zmq.ZMQ;
 
-/**
- *
- */
 public class ZeroMQLogstashRiver extends AbstractRiverComponent implements River {
 
+  private static final String ZEROMQ_LOGSTASH = "zeromq-logstash";
   private static DateFormat dateFormat = new SimpleDateFormat("yyyy.MM.dd");
 
   private Client client;
@@ -66,12 +64,12 @@ public class ZeroMQLogstashRiver extends AbstractRiverComponent implements River
 
   @SuppressWarnings("unchecked")
   @Inject
-  public ZeroMQLogstashRiver(RiverName riverName, RiverSettings settings, Client client, ScriptService scriptService) {
+  public ZeroMQLogstashRiver(RiverName riverName, RiverSettings settings, Client client) {
     super(riverName, settings);
     this.client = client;
 
-    if (settings.settings().containsKey("zeromq-logstash")) {
-      Map<String, Object> zeroMQSettings = (Map<String, Object>) settings.settings().get("zeromq-logstash");
+    if (settings.settings().containsKey(ZEROMQ_LOGSTASH)) {
+      Map<String, Object> zeroMQSettings = (Map<String, Object>) settings.settings().get(ZEROMQ_LOGSTASH);
       if (zeroMQSettings.containsKey("address")) {
         address = (String) zeroMQSettings.get("address");
       }
@@ -98,7 +96,7 @@ public class ZeroMQLogstashRiver extends AbstractRiverComponent implements River
       logger.info("Using ZeroMQ driver JZMQ {}.{}", org.zeromq.ZMQ.getMajorVersion(), org.zeromq.ZMQ.getMinorVersion());
       consumer = new ConsumerJZmq();
     }
-    thread = EsExecutors.daemonThreadFactory(settings.globalSettings(), "zeromq-logstash").newThread(consumer);
+    thread = EsExecutors.daemonThreadFactory(settings.globalSettings(), ZEROMQ_LOGSTASH).newThread(consumer);
     thread.start();
   }
 
@@ -117,6 +115,17 @@ public class ZeroMQLogstashRiver extends AbstractRiverComponent implements River
   public static String computeIndex(String prefix) {
     return prefix + "-" + dateFormat.format(new Date());
   }
+
+  private final ActionListener<IndexResponse> listener = new ActionListener<IndexResponse>() {
+    @Override
+    public void onResponse(IndexResponse arg0) {
+    }
+
+    @Override
+    public void onFailure(Throwable arg0) {
+      logger.error("Unable to index data {}", arg0);
+    }
+  };
 
   private class ConsumerJZmq implements Runnable {
 
@@ -164,17 +173,7 @@ public class ZeroMQLogstashRiver extends AbstractRiverComponent implements River
             req.setSource(data);
             req.setIndex(index);
             req.setType(dataType);
-            req.execute(new ActionListener<IndexResponse>() {
-
-              @Override
-              public void onResponse(IndexResponse arg0) {
-              }
-
-              @Override
-              public void onFailure(Throwable arg0) {
-                logger.error("Unable to index data {}", arg0);
-              }
-            });
+            req.execute(listener);
           }
         }
         closeSocket();
@@ -214,7 +213,6 @@ public class ZeroMQLogstashRiver extends AbstractRiverComponent implements River
       }
     }
 
-
     @Override
     public void run() {
       createSocket();
@@ -229,17 +227,7 @@ public class ZeroMQLogstashRiver extends AbstractRiverComponent implements River
             req.setSource(msg.data());
             req.setIndex(index);
             req.setType(dataType);
-            req.execute(new ActionListener<IndexResponse>() {
-
-              @Override
-              public void onResponse(IndexResponse arg0) {
-              }
-
-              @Override
-              public void onFailure(Throwable arg0) {
-                logger.error("Unable to index data {}", arg0);
-              }
-            });
+            req.execute(listener);
           }
         }
         closeSocket();
