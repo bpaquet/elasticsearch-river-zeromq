@@ -34,16 +34,6 @@ import org.elasticsearch.river.AbstractRiverComponent;
 import org.elasticsearch.river.River;
 import org.elasticsearch.river.RiverName;
 import org.elasticsearch.river.RiverSettings;
-import org.elasticsearch.script.ScriptService;
-import org.zeromq.ZContext;
-import org.zeromq.ZMQ.Socket;
-import org.zeromq.ZMQException;
-
-import zmq.Ctx;
-import zmq.Msg;
-import zmq.PollItem;
-import zmq.SocketBase;
-import zmq.ZMQ;
 
 public class ZeroMQLogstashRiver extends AbstractRiverComponent implements River {
 
@@ -91,7 +81,7 @@ public class ZeroMQLogstashRiver extends AbstractRiverComponent implements River
     try {
       Class.forName("zmq.ZMQ");
       consumer = new ConsumerJeromq();
-      logger.info("Using ZeroMQ driver JeroMQ {}.{}", ZMQ.ZMQ_VERSION_MAJOR, ZMQ.ZMQ_VERSION_MINOR);
+      logger.info("Using ZeroMQ driver JeroMQ {}.{}", zmq.ZMQ.ZMQ_VERSION_MAJOR, zmq.ZMQ.ZMQ_VERSION_MINOR);
     } catch (ClassNotFoundException e) {
       logger.info("Using ZeroMQ driver JZMQ {}.{}", org.zeromq.ZMQ.getMajorVersion(), org.zeromq.ZMQ.getMinorVersion());
       consumer = new ConsumerJZmq();
@@ -129,17 +119,17 @@ public class ZeroMQLogstashRiver extends AbstractRiverComponent implements River
 
   private class ConsumerJZmq implements Runnable {
 
-    private ZContext zmq_ctx;
+    private org.zeromq.ZContext zmq_ctx;
 
-    private Socket zmq_socket;
+    private org.zeromq.ZMQ.Socket zmq_socket;
 
     private void createSocket() {
-      zmq_ctx = new ZContext();
+      zmq_ctx = new org.zeromq.ZContext();
       zmq_socket = zmq_ctx.createSocket(org.zeromq.ZMQ.PULL);
       try {
         zmq_socket.bind(address);
         logger.info("ZeroMQ socket bound to {}", address);
-      } catch (ZMQException e) {
+      } catch (org.zeromq.ZMQException e) {
         logger.warn("Unable to bind socket to {}: {}", address, e);
         closeSocket();
       }
@@ -157,7 +147,6 @@ public class ZeroMQLogstashRiver extends AbstractRiverComponent implements River
         zmq_ctx = null;
       }
     }
-
 
     @Override
     public void run() {
@@ -184,14 +173,14 @@ public class ZeroMQLogstashRiver extends AbstractRiverComponent implements River
 
   private class ConsumerJeromq implements Runnable {
 
-    private Ctx zmq_ctx;
+    private zmq.Ctx zmq_ctx;
 
-    private SocketBase zmq_socket;
+    private zmq.SocketBase zmq_socket;
 
     private void createSocket() {
-      zmq_ctx = ZMQ.zmq_init(1);
-      zmq_socket = ZMQ.zmq_socket(zmq_ctx, ZMQ.ZMQ_PULL);
-      boolean ok = ZMQ.zmq_bind(zmq_socket, address);
+      zmq_ctx = zmq.ZMQ.zmq_init(1);
+      zmq_socket = zmq.ZMQ.zmq_socket(zmq_ctx, zmq.ZMQ.ZMQ_PULL);
+      boolean ok = zmq.ZMQ.zmq_bind(zmq_socket, address);
       if (ok) {
         logger.info("ZeroMQ socket bound to {}", address);
       } else {
@@ -202,12 +191,12 @@ public class ZeroMQLogstashRiver extends AbstractRiverComponent implements River
 
     private void closeSocket() {
       if (zmq_socket != null) {
-        ZMQ.zmq_close(zmq_socket);
+        zmq.ZMQ.zmq_close(zmq_socket);
         logger.info("ZeroMQ socket closed");
         zmq_socket = null;
       }
       if (zmq_ctx != null) {
-        ZMQ.zmq_term(zmq_ctx);
+        zmq.ZMQ.zmq_term(zmq_ctx);
         logger.info("ZeroMQ context terminated");
         zmq_ctx = null;
       }
@@ -217,11 +206,11 @@ public class ZeroMQLogstashRiver extends AbstractRiverComponent implements River
     public void run() {
       createSocket();
       if (zmq_socket != null) {
-        PollItem[] poll = new PollItem[]{new PollItem(zmq_socket, ZMQ.ZMQ_POLLIN)};
+        zmq.PollItem[] poll = new zmq.PollItem[]{new zmq.PollItem(zmq_socket, zmq.ZMQ.ZMQ_POLLIN)};
         logger.info("Starting ZeroMQ Logstash loop");
         while (loop) {
-          if (ZMQ.zmq_poll(poll, 500) > 0) {
-            Msg msg = ZMQ.zmq_recv(zmq_socket, 0);
+          if (zmq.ZMQ.zmq_poll(poll, 500) > 0) {
+            zmq.Msg msg = zmq.ZMQ.zmq_recv(zmq_socket, 0);
             IndexRequestBuilder req = client.prepareIndex();
             String index = computeIndex(prefix);
             req.setSource(msg.data());
