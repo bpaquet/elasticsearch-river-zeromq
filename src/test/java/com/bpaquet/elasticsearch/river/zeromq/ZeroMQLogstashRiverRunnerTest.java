@@ -36,11 +36,10 @@ public abstract class ZeroMQLogstashRiverRunnerTest {
         .build();
     node = NodeBuilder.nodeBuilder().local(true).settings(settings).node();
 
-    System.out.println(INDEX);
+    //Delete index, continue even if there is an error
     try {
       node.client().admin().indices().prepareDelete(INDEX).execute().actionGet();
-    } catch (IndexMissingException e) {
-    }
+    } catch (IndexMissingException e) {}
 
     node.client().prepareIndex("_river", "my_river", "_meta").setSource(river()).execute().actionGet();
 

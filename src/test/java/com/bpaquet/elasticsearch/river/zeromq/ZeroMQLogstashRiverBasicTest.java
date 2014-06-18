@@ -16,7 +16,14 @@ public class ZeroMQLogstashRiverBasicTest extends ZeroMQLogstashRiverRunnerTest 
 
   @Override
   protected XContentBuilder river() throws IOException {
-    return XContentFactory.jsonBuilder().startObject().field("type", "zeromq-logstash").endObject();
+    return XContentFactory.
+        jsonBuilder().
+        startObject().
+          field("type", "zeromq-logstash").
+          startObject("zeromq-logstash").
+            field("flushInterval", "1").
+          endObject().
+        endObject();
   }
 
   @Test
@@ -31,16 +38,18 @@ public class ZeroMQLogstashRiverBasicTest extends ZeroMQLogstashRiverRunnerTest 
     ctx = ZMQ.zmq_init(1);
     socket = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_PUSH);
     Assert.assertEquals(true, socket.connect("tcp://127.0.0.1:12345"));
+
     XContentBuilder line = XContentFactory.jsonBuilder().startObject()
         .field("@version", 1)
         .field("@timestamp", "2013-12-31T10:57:13.412Z")
         .field("message", "toto")
         .field("source", "stdin")
         .endObject();
+
     Msg m = new Msg(line.string().getBytes());
     ZMQ.zmq_send(socket, m, 0);
     // wait for message processing
-    Thread.sleep(1000);
+    Thread.sleep(1500);
     // Force index refresh to avoid long wait
     node.client().admin().indices().prepareRefresh(INDEX).execute().actionGet();
 
