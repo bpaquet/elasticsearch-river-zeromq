@@ -22,13 +22,10 @@ package com.bpaquet.elasticsearch.river.zeromq;
 import org.elasticsearch.common.inject.AbstractModule;
 import org.elasticsearch.river.River;
 
-/**
- *
- */
 public class ZeroMQLogstashRiverModule extends AbstractModule {
 
-    @Override
-    protected void configure() {
-        bind(River.class).to(ZeroMQLogstashRiver.class).asEagerSingleton();
-    }
+  @Override
+  protected void configure() {
+    bind(River.class).to(ZeroMQLogstashRiver.class).asEagerSingleton();
+  }
 }
