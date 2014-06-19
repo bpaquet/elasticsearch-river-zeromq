@@ -47,8 +47,8 @@ public class ZeroMQLogstashRiver extends AbstractRiverComponent implements River
   private String address = "tcp://127.0.0.1:12345";
   private String dataType = "logs";
   private String prefix = "logstash";
-  private int bulkSize = 200;
-  private int flushInterval = 10;
+  private int bulkSize = 2000;
+  private int flushInterval = 1;
 
   private volatile Thread thread;
   private volatile boolean loop;
@@ -122,12 +122,12 @@ public class ZeroMQLogstashRiver extends AbstractRiverComponent implements River
     private BulkProcessor bulkProcessor = BulkProcessor.builder(client, new BulkProcessor.Listener() {
       @Override
       public void beforeBulk(long executionId, BulkRequest request) {
-        logger.info("Strating bulking {} data", request.numberOfActions());
+        logger.debug("Starting bulking {} data", request.numberOfActions());
       }
 
       @Override
       public void afterBulk(long executionId, BulkRequest request, BulkResponse response) {
-        logger.info("Successfully bulked {} data", request.numberOfActions());
+        logger.debug("Successfully bulked {} data", request.numberOfActions());
       }
 
       @Override
