@@ -92,6 +92,7 @@ public class ZeroMQLogstashRiver extends AbstractRiverComponent implements River
   @Override
   public void start() {
     logger.info("Starting ZeroMQ Logstash River [{}] using index prefix {}", address, prefix);
+    logger.info("Using configuration bulkSize: {}, flushInterval: {}", bulkSize, flushInterval);
 
     loop = true;
     Runnable consumer = new Consumer(new ZeroMQWrapper(address, logger));
