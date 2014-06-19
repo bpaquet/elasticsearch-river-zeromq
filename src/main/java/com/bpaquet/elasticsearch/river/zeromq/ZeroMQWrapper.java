@@ -114,7 +114,7 @@ public class ZeroMQWrapper {
       logger.warn("Unable to bind socket to {}: {}", address, e);
       zmqCloseSocket();
     }
-    return null == zmqSocket;
+    return (zmqSocket != null);
   }
 
   private void zmqCloseSocket() {
