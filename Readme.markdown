@@ -16,7 +16,7 @@ Installation
 ---
 
 ```sh
-bin/plugin -install bpaquet/elasticsearch-river-zeromq/0.0.5 --url https://github.com/bpaquet/elasticsearch-river-zeromq/releases/download/v0.0.5/elasticsearch-river-zeromq-0.0.5.zip
+bin/plugin -install bpaquet/elasticsearch-river-zeromq/0.0.5 --url https://github.com/bpaquet/elasticsearch-river-zeromq/releases/download/elasticsearch-river-zeromq-0.0.5/elasticsearch-river-zeromq-0.0.5.zip
 ```
 
 How to use it
